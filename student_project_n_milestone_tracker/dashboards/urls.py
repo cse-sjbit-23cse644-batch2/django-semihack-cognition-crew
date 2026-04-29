@@ -10,6 +10,7 @@ urlpatterns = [
     path('guide/', views.guide_dashboard, name='guide_dashboard'),
     path('coordinator/', views.coordinator_dashboard, name='coordinator_dashboard'),
     path('student/', views.student_dashboard, name='student_dashboard'),
+    path('admin/export/', views.admin_export_page, name='admin_export'),
     
     # Legacy/Additional routes
     path('my-team/', views.my_team, name='my_team'),

@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, F
 from django.db.models.functions import TruncDay
-from projects.models import Project, Submission, Version, Feedback, Phase, Evaluation
+from projects.models import Project, Submission, Version, Feedback, Phase, Evaluation, Domain
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from datetime import timedelta
@@ -132,6 +133,31 @@ def admin_dashboard(request):
     }
     
     return render(request, 'dashboards/admin_dashboard.html', context)
+
+
+@login_required
+def admin_export_page(request):
+    """Admin export page for super admins to export filtered project CSVs."""
+    if request.user.role != 'ADMIN':
+        return redirect('dashboard')
+
+    User = get_user_model()
+    guides = User.objects.filter(role='GUIDE').order_by('first_name', 'last_name')
+    domains = Domain.objects.order_by('name')
+
+    publication_choices = [
+        ('', 'All'),
+        ('Yes', 'Published'),
+        ('No', 'Not Published'),
+    ] + list(Project.PUBLICATION_CHOICES)
+
+    context = {
+        'role': request.user.role,
+        'guides': guides,
+        'domains': domains,
+        'publication_choices': publication_choices,
+    }
+    return render(request, 'dashboards/admin_export.html', context)
 
 
 @login_required

@@ -162,6 +162,10 @@
                             <i class="ph ph-shield-check text-xl mr-3 text-slate-400 group-hover:text-slate-500"></i>
                             Coordinators
                         </a>
+                        <a href="{% url 'admin_export' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-50 mb-1 transition-colors">
+                            <i class="ph ph-download text-xl mr-3 text-slate-400 group-hover:text-slate-500"></i>
+                            Export Projects
+                        </a>
                     {% elif user.role == 'COORDINATOR' %}
                         <a href="{% url 'coordinator_dashboard' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-50 mb-1 transition-colors">
                             <i class="ph ph-shield-check text-xl mr-3 text-slate-400 group-hover:text-slate-500"></i>

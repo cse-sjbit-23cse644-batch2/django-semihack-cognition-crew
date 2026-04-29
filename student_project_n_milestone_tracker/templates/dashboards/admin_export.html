@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Export - MilestoneTrack{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Export Project CSV</h1>
+                <p class="text-slate-600 mt-2">Filter by guide, domain, and publication status, then download a CSV compatible with Excel.</p>
+            </div>
+            <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition text-sm font-semibold">
+                <i class="ph ph-arrow-left"></i> Back to Admin Dashboard
+            </a>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+            <form action="{% url 'export-csv' %}" method="get" class="grid gap-4 md:grid-cols-3">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Guide</label>
+                    <select name="guide_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Guides</option>
+                        {% for guide in guides %}
+                        <option value="{{ guide.id }}">{{ guide.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Domain</label>
+                    <select name="domain_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Domains</option>
+                        {% for domain in domains %}
+                        <option value="{{ domain.id }}">{{ domain.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Publication</label>
+                    <select name="publication" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for value, label in publication_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="md:col-span-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                    <div class="text-sm text-slate-500">
+                        Use query params like <code class="bg-slate-100 px-2 py-1 rounded">?guide_id=1&amp;publication=Yes</code> for direct CSV downloads.
+                    </div>
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition text-sm font-semibold">
+                        <i class="ph ph-download"></i>
+                        Download CSV
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="mt-8 bg-white rounded-3xl border border-slate-200 p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">CSV Fields Included</h2>
+            <ul class="space-y-2 text-sm text-slate-600">
+                <li>• <strong>Title</strong> - project title</li>
+                <li>• <strong>Team</strong> - comma-separated student names</li>
+                <li>• <strong>Marks</strong> - average evaluation rating</li>
+                <li>• <strong>Status</strong> - project workflow status</li>
+                <li>• <strong>Publication</strong> - publication approval state</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

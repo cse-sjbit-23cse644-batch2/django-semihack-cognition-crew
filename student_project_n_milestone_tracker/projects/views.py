@@ -1009,55 +1009,55 @@ def coordinator_approve(request, project_id):
 # CSV Export View
 @login_required
 def export_projects_csv(request):
-    """Export projects to CSV with filters."""
+    """Export projects to CSV with guide, domain, and publication filters."""
 
     import csv
     from django.http import HttpResponse
 
-    # Get filters
-    guide_id = request.GET.get('guide')
-    domain_id = request.GET.get('domain')
+    # Get filters from query params
+    guide_id = request.GET.get('guide_id') or request.GET.get('guide')
+    domain_id = request.GET.get('domain_id') or request.GET.get('domain')
+    publication = request.GET.get('publication')
     publication_status = request.GET.get('publication_status')
 
-    # Build queryset
-    projects = Project.objects.select_related('domain', 'guide', 'coordinator').prefetch_related('team_members__user', 'evaluations')
+    projects = Project.objects.select_related('domain', 'guide', 'coordinator')
+    projects = projects.prefetch_related('team_members__user', 'evaluations')
 
     if guide_id:
         projects = projects.filter(guide_id=guide_id)
     if domain_id:
         projects = projects.filter(domain_id=domain_id)
+
+    if publication:
+        publication_value = publication.strip().upper()
+        if publication_value == 'YES':
+            projects = projects.filter(publication_status='PUBLISHED')
+        elif publication_value == 'NO':
+            projects = projects.exclude(publication_status='PUBLISHED')
+        elif publication_value in dict(Project.PUBLICATION_CHOICES):
+            projects = projects.filter(publication_status=publication_value)
+
     if publication_status:
         projects = projects.filter(publication_status=publication_status)
 
-    # Create CSV response
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="projects_export.csv"'
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="projects_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    response.write('\ufeff')
 
     writer = csv.writer(response)
-    writer.writerow([
-        'Project Title', 'Students', 'Domain', 'Guide', 'Coordinator',
-        'Status', 'Publication Status', 'Average Rating', 'Created At'
-    ])
+    writer.writerow(['Title', 'Team', 'Marks', 'Status', 'Publication'])
 
     for project in projects:
         students = ', '.join([tm.user.get_full_name() for tm in project.team_members.all()])
-        guide_name = project.guide.get_full_name() if project.guide else ''
-        coordinator_name = project.coordinator.get_full_name() if project.coordinator else ''
-
-        # Calculate average rating
         evaluations = project.evaluations.all()
-        avg_rating = sum([e.rating for e in evaluations]) / len(evaluations) if evaluations else 0
+        avg_rating = sum([e.rating for e in evaluations]) / len(evaluations) if evaluations else ''
 
         writer.writerow([
             project.title,
             students,
-            project.domain.name,
-            guide_name,
-            coordinator_name,
+            f"{avg_rating:.1f}" if avg_rating != '' else '',
             project.status,
             project.publication_status,
-            f"{avg_rating:.1f}" if avg_rating > 0 else '',
-            project.created_at.strftime('%Y-%m-%d'),
         ])
 
     return response
