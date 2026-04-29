@@ -1,10 +1,53 @@
+# 🔐 Environment variables
+.env
+.env.*
+
+# 🐍 Python cache
 __pycache__/
 *.py[cod]
-.env
+*$py.class
+
+# 📦 Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# 🗄️ Database
+db.sqlite3
+*.sqlite3
+
+# 📁 Logs
 *.log
+
+# 📁 Media & uploads (user-generated files)
+media/
+
+# 📁 Static files (optional if collected)
+staticfiles/
+
+# 🧠 IDE / Editor
 .vscode/
 .idea/
-media/
-db.sqlite3
-*.sql
-*.log
+
+# 🖥️ OS files
+.DS_Store
+Thumbs.db
+
+# 🧪 Test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 📦 Build / dist
+build/
+dist/
+*.egg-info/
+
+# 🔥 Django stuff
+*.pot
+*.mo
+
+# 📄 Backup files
+*.bak
+*.swp
