@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Guide Dashboard - MilestoneTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    .team-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .team-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        border-color: #3b82f6;
+    }
+    .progress-bar {
+        height: 8px;
+        background: linear-gradient(90deg, #dbeafe, #93c5fd);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    .phase-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .phase-synopsis { background: #f3f4f6; color: #374151; }
+    .phase-1 { background: #dbeafe; color: #1e40af; }
+    .phase-2 { background: #ddd6fe; color: #5b21b6; }
+    .phase-final { background: #fecaca; color: #991b1b; }
+    .pending-badge {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    .stat-mini {
+        background: #f9fafb;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .stat-mini:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-slate-900 font-heading">Guide Dashboard</h1>
+                    <p class="text-slate-600 mt-2">Welcome, {{ user.first_name|default:"Guide" }}. Manage your assigned teams.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'export_teams_csv' %}" class="px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg font-semibold hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                        <i class="ph ph-file-csv text-xl"></i>
+                        Export Report
+                    </a>
+                    <span class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold">
+                        <i class="ph ph-users text-xl mr-2"></i>
+                        {{ assigned_teams_count|default:0 }} Teams
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview Stats -->
+        <div class="mb-8">
+            <div class="stats-grid">
+                <div class="stat-mini">
+                    <i class="ph ph-check-circle text-green-600 text-2xl mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-600">Approved</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ approved_count|default:0 }}</p>
+                </div>
+                <div class="stat-mini">
+                    <i class="ph ph-clock text-amber-600 text-2xl mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-600">In Review</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ in_review_count|default:0 }}</p>
+                </div>
+                <div class="stat-mini">
+                    <i class="ph ph-x-circle text-red-600 text-2xl mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-600">Rejected</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ rejected_count|default:0 }}</p>
+                </div>
+                <div class="stat-mini">
+                    <i class="ph ph-warning-circle text-red-600 text-2xl mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-600">Pending</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ pending_submissions|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Reviews Alert -->
+        {% if pending_submissions %}
+        <div class="mb-8 bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+            <div class="flex items-start">
+                <i class="ph ph-warning text-red-600 text-2xl mr-4 flex-shrink-0 mt-1"></i>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-red-900 text-lg">Submissions Awaiting Review</h3>
+                    <p class="text-red-700 mt-2">You have {{ pending_submissions }} submissions pending your review. Please prioritize these to keep teams on schedule.</p>
+                    <a href="{% url 'reviews' %}" class="inline-block mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm">
+                        <i class="ph ph-list mr-2"></i>View Pending Reviews
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Assigned Teams Grid -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <i class="ph ph-users text-blue-600 text-2xl"></i>
+                    Assigned Teams
+                </h2>
+                <div class="flex items-center gap-2">
+                    <input 
+                        type="text" 
+                        placeholder="Search teams..." 
+                        class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>All Phases</option>
+                        <option>Synopsis</option>
+                        <option>Phase 1</option>
+                        <option>Phase 2</option>
+                        <option>Final Report</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for team in assigned_teams %}
+                <div class="team-card bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-slate-900">{{ team.name }}</h3>
+                            <p class="text-sm text-slate-600 mt-1">{{ team.title }}</p>
+                        </div>
+                        <span class="phase-badge {{ team.phase_class }}">
+                            {{ team.current_phase }}
+                        </span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs font-semibold text-slate-700">Overall Progress</p>
+                            <p class="text-sm font-bold text-slate-900">{{ team.progress }}%</p>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ team.progress }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4 py-4 border-t border-b border-slate-200">
+                        <div>
+                            <p class="text-xs text-slate-500">Team Members</p>
+                            <p class="font-semibold text-slate-900">{{ team.members_count }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Last Submission</p>
+                            <p class="font-semibold text-slate-900">{{ team.last_submission_days }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <a href="{% url 'projects:project-detail' team.id %}" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm flex items-center justify-center gap-2">
+                            <i class="ph ph-eye"></i>
+                            View Team
+                        </a>
+                        <a href="{% url 'reviews' %}" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium text-sm flex items-center justify-center gap-2">
+                            <i class="ph ph-pencil"></i>
+                            Review
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-2 text-center py-12 text-slate-500">
+                    <i class="ph ph-users text-4xl mb-3"></i>
+                    <p>No teams assigned to you yet.</p>
+                </div>
+                {% endfor %}
+
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
+                <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="ph ph-chart-bar text-blue-600"></i>
+                    Team Completion (%)
+                </h3>
+                <div class="chart-container">
+                    <canvas id="teamCompletionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const teamNames = {{ chart_team_names|safe }};
+        const teamProgress = {{ chart_team_progress|safe }};
+        const ctx = document.getElementById('teamCompletionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: teamNames,
+                datasets: [{
+                    label: '% Complete',
+                    data: teamProgress,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6,
+                    maxBarThickness: 40,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endblock %}
+
+        <!-- Quick Review Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+                <i class="ph ph-clock text-amber-600"></i>
+                Recent Activity
+            </h2>
+            <div class="space-y-4">
+                {% for activity in recent_activity %}
+                {% if activity.level == 'success' %}{% with c="green" icon="ph-check" %}
+                <div class="flex items-start gap-4 p-3 border border-transparent border-b-slate-200 transition-all duration-300 hover:bg-slate-50 hover:border-{{ c }}-200 hover:shadow-sm rounded-lg cursor-pointer">
+                    <div class="flex-shrink-0 w-12 h-12 bg-{{ c }}-100 rounded-lg flex items-center justify-center">
+                        <i class="ph {{ icon }} text-{{ c }}-600 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">{{ activity.title }}</p>
+                        <p class="text-sm text-slate-600 mt-1">{{ activity.message }}</p>
+                    </div>
+                </div>
+                {% endwith %}
+                {% elif activity.level == 'warning' %}{% with c="amber" icon="ph-upload" %}
+                <div class="flex items-start gap-4 p-3 border border-transparent border-b-slate-200 transition-all duration-300 hover:bg-slate-50 hover:border-{{ c }}-200 hover:shadow-sm rounded-lg cursor-pointer">
+                    <div class="flex-shrink-0 w-12 h-12 bg-{{ c }}-100 rounded-lg flex items-center justify-center">
+                        <i class="ph {{ icon }} text-{{ c }}-600 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">{{ activity.title }}</p>
+                        <p class="text-sm text-slate-600 mt-1">{{ activity.message }}</p>
+                    </div>
+                </div>
+                {% endwith %}
+                {% elif activity.level == 'danger' %}{% with c="red" icon="ph-x" %}
+                <div class="flex items-start gap-4 p-3 border border-transparent border-b-slate-200 transition-all duration-300 hover:bg-slate-50 hover:border-{{ c }}-200 hover:shadow-sm rounded-lg cursor-pointer">
+                    <div class="flex-shrink-0 w-12 h-12 bg-{{ c }}-100 rounded-lg flex items-center justify-center">
+                        <i class="ph {{ icon }} text-{{ c }}-600 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">{{ activity.title }}</p>
+                        <p class="text-sm text-slate-600 mt-1">{{ activity.message }}</p>
+                    </div>
+                </div>
+                {% endwith %}
+                {% else %}{% with c="blue" icon="ph-info" %}
+                <div class="flex items-start gap-4 p-3 border border-transparent border-b-slate-200 transition-all duration-300 hover:bg-slate-50 hover:border-{{ c }}-200 hover:shadow-sm rounded-lg cursor-pointer">
+                    <div class="flex-shrink-0 w-12 h-12 bg-{{ c }}-100 rounded-lg flex items-center justify-center">
+                        <i class="ph {{ icon }} text-{{ c }}-600 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">{{ activity.title }}</p>
+                        <p class="text-sm text-slate-600 mt-1">{{ activity.message }}</p>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endif %}
+                {% empty %}
+                <div class="text-center py-6 text-slate-500">
+                    <i class="ph ph-activity text-3xl mb-2"></i>
+                    <p class="text-sm">No recent activity found</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

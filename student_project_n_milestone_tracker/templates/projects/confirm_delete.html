@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Delete | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+        <h1 class="text-3xl font-bold text-slate-900">Confirm Deletion</h1>
+
+        {% if object.title %}
+            <p class="text-slate-600 mt-3">You are about to delete project <strong>{{ object.title }}</strong>.</p>
+            <div class="mt-6 bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-1">
+                <p class="text-sm text-slate-600">Domain: <strong>{{ object.domain.name }}</strong></p>
+                <p class="text-sm text-slate-600">Guide: <strong>{{ object.guide.get_full_name|default:'Unassigned' }}</strong></p>
+                <p class="text-sm text-slate-600">Status: <strong>{{ object.get_status_display }}</strong></p>
+            </div>
+            {% url 'projects:project-detail' object.pk as cancel_url %}
+        {% else %}
+            <p class="text-slate-600 mt-3">You are about to delete user <strong>{{ object.get_full_name|default:object.username }}</strong>.</p>
+            <div class="mt-6 bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-1">
+                <p class="text-sm text-slate-600">Username: <strong>{{ object.username }}</strong></p>
+                <p class="text-sm text-slate-600">Email: <strong>{{ object.email }}</strong></p>
+                <p class="text-sm text-slate-600">Role: <strong>{{ object.get_role_display }}</strong></p>
+            </div>
+            {% if object.role == 'STUDENT' %}
+                {% url 'student-list' as cancel_url %}
+            {% elif object.role == 'GUIDE' %}
+                {% url 'guide-list' as cancel_url %}
+            {% elif object.role == 'COORDINATOR' %}
+                {% url 'coordinator-list' as cancel_url %}
+            {% else %}
+                {% url 'dashboard' as cancel_url %}
+            {% endif %}
+        {% endif %}
+
+        <div class="mt-6 space-y-4">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-red-600 text-white rounded-lg px-5 py-3 text-sm font-semibold hover:bg-red-700 transition">
+                    <i class="ph ph-trash"></i>
+                    Delete
+                </button>
+            </form>
+            <a href="{{ cancel_url }}" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+                <i class="ph ph-arrow-left"></i>
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

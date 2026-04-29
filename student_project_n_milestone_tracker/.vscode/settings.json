@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd c:\\\\Users\\\\Nikhil\\\\Desktop\\\\Student_Project_Milestone_Tracker ; python manage\\.py shell -c \"\nfrom auth_app\\.models import User\n# Check if any coordinators exist\ncoordinators = User\\.objects\\.filter\\(role='COORDINATOR'\\)\nprint\\(f'Total coordinators: \\{coordinators\\.count\\(\\)\\}'\\)\nfor c in coordinators:\n    print\\(f'  - \\{c\\.username\\}: \\{c\\.get_full_name\\(\\)\\}'\\)\n\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

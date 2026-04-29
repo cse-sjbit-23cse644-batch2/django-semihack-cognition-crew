@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Coordinator Dashboard | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="h3">Coordinator Dashboard</h1>
+            <p class="text-muted">Review approved submissions, finalize publications, and upload certificates.</p>
+        </div>
+        <div class="badge bg-info" style="font-size: 1rem; padding: 0.75rem 1.25rem;">
+            👤 {{ request.user.get_full_name|default:request.user.username }}
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center py-5">
+                    <div class="display-6 fw-bold text-primary mb-2">{{ total_projects }}</div>
+                    <p class="text-muted mb-0">Total Projects</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #ffc107;">
+                <div class="card-body text-center py-5">
+                    <div class="display-6 fw-bold text-warning mb-2">{{ pending_approvals }}</div>
+                    <p class="text-muted mb-0">Ready for Approval</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100" style="border-left: 4px solid #28a745;">
+                <div class="card-body text-center py-5">
+                    <div class="display-6 fw-bold text-success mb-2">{{ published_projects }}</div>
+                    <p class="text-muted mb-0">Published</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center py-5">
+                    <div class="display-6 fw-bold text-info mb-2">{{ completed_projects }}</div>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Projects Needing Action -->
+        <div class="col-lg-8">
+            <!-- Ready for Approval -->
+            {% if projects_needing_attention %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning bg-opacity-10 border-bottom">
+                    <h5 class="mb-0">
+                        <span class="badge bg-warning me-2">{{ projects_needing_attention|length }}</span>
+                        Projects Ready for Final Approval
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for item in projects_needing_attention %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center g-3">
+                                <div class="col">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <a href="{% url 'projects:project-detail' item.project.pk %}" class="text-dark text-decoration-none">
+                                                {{ item.project.title }}
+                                            </a>
+                                        </h6>
+                                        <small class="text-muted">
+                                            📚 {{ item.project.domain.name|default:"General" }} | 
+                                            👨‍🏫 {{ item.project.guide.get_full_name|default:"Unassigned" }} |
+                                            👥 {{ item.project.team_members.count }} members
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="me-2 mb-2">
+                                        <span class="badge bg-success">100% Complete</span>
+                                    </div>
+                                    <div>
+                                        {% if item.project.certificate %}
+                                            <span class="badge bg-info" title="Certificate uploaded">📄 Has Cert</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary" title="No certificate yet">📄 No Cert</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <a href="{% url 'projects:coordinator-approve' item.project.pk %}" class="btn btn-primary btn-sm">
+                                        Approve & Finalize →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center py-5">
+                    <p class="text-muted mb-0">
+                        ✓ No projects currently waiting for approval.<br>
+                        All awaiting projects are either pending guide review or already finalized.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- All Assigned Projects -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">
+                        <span class="badge bg-secondary me-2">{{ assigned_projects|length }}</span>
+                        All Assigned Projects
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if assigned_projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Project Title</th>
+                                    <th>Domain</th>
+                                    <th>Completion</th>
+                                    <th>Publication</th>
+                                    <th>Certificate</th>
+                                    <th>Submission</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in assigned_projects %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ project.title }}</strong><br>
+                                        <small class="text-muted">Guide: {{ project.guide.get_full_name|default:"N/A" }}</small>
+                                    </td>
+                                    <td>{{ project.domain.name|default:"General" }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ project.get_completion_percentage }}%"
+                                                 aria-valuenow="{{ project.get_completion_percentage }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ project.get_completion_percentage }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if project.publication_status == 'PUBLISHED' %}
+                                            <span class="badge bg-success">✓ Published</span>
+                                        {% elif project.publication_status == 'APPROVED' %}
+                                            <span class="badge bg-info">◐ Approved</span>
+                                        {% elif project.publication_status == 'REJECTED' %}
+                                            <span class="badge bg-danger">✗ Rejected</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">⧖ {{ project.get_publication_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if project.certificate %}
+                                            <a href="{{ project.certificate.url }}" target="_blank" 
+                                               class="badge bg-info text-decoration-none" title="View certificate">
+                                                📄 View
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if project.latest_submission %}
+                                            <a href="{% url 'projects:submission-detail' project.latest_submission.pk %}" class="btn btn-sm btn-outline-secondary">
+                                                View Details
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">No submissions</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'projects:project-detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                            View Team
+                                        </a>
+                                        <a href="{% url 'projects:coordinator-approve' project.pk %}" class="btn btn-sm {% if project.phase_total and project.approved_count == project.phase_total %}btn-primary{% else %}btn-outline-primary{% endif %} mt-1">
+                                            Finalize
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body text-center py-5">
+                        <p class="text-muted mb-0">No projects assigned to you yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Recent Activity -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_activity %}
+                    <ul class="list-group list-group-flush">
+                        {% for activity in recent_activity %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <p class="mb-1 fw-semibold text-dark">{{ activity.title }}</p>
+                                    <p class="mb-0 text-muted small">{{ activity.message }}</p>
+                                </div>
+                                {% if activity.level == 'success' %}
+                                    <span class="badge bg-success ms-2">✓</span>
+                                {% elif activity.level == 'warning' %}
+                                    <span class="badge bg-warning ms-2">⧖</span>
+                                {% elif activity.level == 'danger' %}
+                                    <span class="badge bg-danger ms-2">!</span>
+                                {% else %}
+                                    <span class="badge bg-info ms-2">ℹ</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="card-body text-center py-4">
+                        <p class="text-muted mb-0">No recent activity yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">Approval Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Pending Approval</span>
+                            <span class="fw-bold text-warning">{{ pending_approvals }} / {{ total_projects }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="{{ pending_approvals }}" aria-valuemin="0" aria-valuemax="{{ total_projects }}"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Published</span>
+                            <span class="fw-bold text-success">{{ published_projects }} / {{ total_projects }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ published_projects }}" aria-valuemin="0" aria-valuemax="{{ total_projects }}"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Completed</span>
+                            <span class="fw-bold text-info">{{ completed_projects }} / {{ total_projects }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" role="progressbar" aria-valuenow="{{ completed_projects }}" aria-valuemin="0" aria-valuemax="{{ total_projects }}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow Info -->
+            <div class="alert alert-info" role="alert">
+                <h6 class="alert-heading">📋 Workflow</h6>
+                <small>
+                    1️⃣ <strong>Guide Reviews</strong> – All 5 phases must be approved<br>
+                    2️⃣ <strong>You Finalize</strong> – Set publication status & upload certificate<br>
+                    3️⃣ <strong>Project Complete</strong> – Team is notified of final status
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover { background-color: rgba(0, 123, 255, 0.05); }
+    .badge { font-size: 0.8rem; }
+    .display-6 { line-height: 1.2; }
+</style>
+{% endblock %}

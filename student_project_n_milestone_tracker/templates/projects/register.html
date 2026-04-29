@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Project | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">Register New Project</h1>
+        <p class="text-slate-600 mt-2">Create a new capstone project and start your milestone journey</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-red-700 text-sm font-semibold">Error registering project:</p>
+            {% for error in form.non_field_errors %}
+                <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="id_title" class="block text-sm font-semibold text-slate-900 mb-2">
+                Project Title *
+            </label>
+            <input 
+                type="text" 
+                name="title" 
+                id="id_title" 
+                required 
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                placeholder="e.g., AI-Based Chatbot for Customer Support"
+                onblur="checkSimilarity(this.value)"
+            />
+            <div id="similarity-warning" class="mt-2 hidden p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-yellow-800 text-sm font-semibold">Similar projects detected:</p>
+                <div id="similarity-results" class="mt-2 text-sm text-yellow-700"></div>
+            </div>
+            {% if form.title.errors %}
+                <p class="text-red-600 text-sm mt-1">{{ form.title.errors }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="id_description" class="block text-sm font-semibold text-slate-900 mb-2">
+                Project Description
+            </label>
+            <textarea 
+                name="description" 
+                id="id_description" 
+                rows="4"
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                placeholder="Brief description of your project..."
+            ></textarea>
+        </div>
+
+        <div>
+            <label for="id_domain" class="block text-sm font-semibold text-slate-900 mb-2">
+                Domain / Category *
+            </label>
+            <select 
+                name="domain" 
+                id="id_domain" 
+                required
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            >
+                <option value="">Select a domain</option>
+                <option value="AI">Artificial Intelligence</option>
+                <option value="ML">Machine Learning</option>
+                <option value="IoT">Internet of Things</option>
+                <option value="WEB">Web Development</option>
+                <option value="MOBILE">Mobile Development</option>
+                <option value="DATA">Data Science</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="id_team_members" class="block text-sm font-semibold text-slate-900 mb-2">
+                Team Members
+            </label>
+            <p class="text-sm text-slate-600 mb-3">Select team members (yourself included)</p>
+            <div id="team-members" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Will be populated with checkboxes -->
+            </div>
+        </div>
+
+        <div class="flex gap-4 pt-6">
+            <button 
+                type="submit" 
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+            >
+                <i class="ph-fill ph-plus"></i>
+                Register Project
+            </button>
+            <a 
+                href="{% url 'dashboard' %}" 
+                class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+            >
+                <i class="ph-fill ph-x"></i>
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function checkSimilarity(title) {
+    if (!title || title.length < 3) {
+        document.getElementById('similarity-warning').classList.add('hidden');
+        return;
+    }
+
+    fetch('/api/similarity/check-title/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ title: title })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const warning = document.getElementById('similarity-warning');
+        const results = document.getElementById('similarity-results');
+        
+        if (data.matches && data.matches.length > 0) {
+            warning.classList.remove('hidden');
+            results.innerHTML = data.matches.map(m => 
+                `<div class="mb-2">
+                    <strong>${m.title}</strong> (${(m.score * 100).toFixed(0)}% similar)
+                </div>`
+            ).join('');
+        } else {
+            warning.classList.add('hidden');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

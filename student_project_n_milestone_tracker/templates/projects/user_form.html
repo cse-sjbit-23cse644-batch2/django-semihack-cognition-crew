@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user_type }} Form | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">{{ user_type }} Details</h2>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-primary">Save {{ user_type }}</button>
+                            {% if user_type == 'Student' %}
+                                <a href="{% url 'student-list' %}" class="btn btn-secondary">Cancel</a>
+                            {% elif user_type == 'Guide' %}
+                                <a href="{% url 'guide-list' %}" class="btn btn-secondary">Cancel</a>
+                            {% elif user_type == 'Coordinator' %}
+                                <a href="{% url 'coordinator-list' %}" class="btn btn-secondary">Cancel</a>
+                            {% else %}
+                                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

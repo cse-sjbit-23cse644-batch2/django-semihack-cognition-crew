@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Project | MilestoneTracker{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-control,
+    .form-select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        padding: 0.625rem 0.875rem;
+        background: #fff;
+        color: #0f172a;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Create New Project</h1>
+            <p class="text-slate-600 mt-2">Add the project details first, then assign students from Assign Project.</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition text-sm font-semibold">
+            <i class="ph ph-arrow-left"></i>
+            Dashboard
+        </a>
+    </div>
+
+    <form method="post" novalidate class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            {% for error in form.non_field_errors %}
+                <p class="text-sm text-red-700 font-medium">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                Title <span class="text-red-600">*</span>
+            </label>
+            {{ form.title }}
+            <p class="text-xs text-slate-500 mt-1">Project title must be unique.</p>
+            {% if form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ form.title.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="{{ form.domain.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                    Existing Domain
+                </label>
+                {{ form.domain }}
+                <p class="text-xs text-slate-500 mt-1">Select one if it already exists.</p>
+                {% if form.domain.errors %}<p class="text-sm text-red-600 mt-1">{{ form.domain.errors|striptags }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.new_domain_name.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                    New Domain
+                </label>
+                {{ form.new_domain_name }}
+                <p class="text-xs text-slate-500 mt-1">Use this when the dropdown is empty or missing your domain.</p>
+                {% if form.new_domain_name.errors %}<p class="text-sm text-red-600 mt-1">{{ form.new_domain_name.errors|striptags }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.new_domain_description.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                New Domain Description
+            </label>
+            {{ form.new_domain_description }}
+            {% if form.new_domain_description.errors %}<p class="text-sm text-red-600 mt-1">{{ form.new_domain_description.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% if form.guide %}
+            <div>
+                <label for="{{ form.guide.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                    Guide
+                </label>
+                {{ form.guide }}
+                <p class="text-xs text-slate-500 mt-1">You can also change this later from Assign Project.</p>
+                {% if form.guide.errors %}<p class="text-sm text-red-600 mt-1">{{ form.guide.errors|striptags }}</p>{% endif %}
+            </div>
+            {% endif %}
+
+            {% if form.coordinator %}
+            <div>
+                <label for="{{ form.coordinator.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                    Coordinator
+                </label>
+                {{ form.coordinator }}
+                {% if form.coordinator.errors %}<p class="text-sm text-red-600 mt-1">{{ form.coordinator.errors|striptags }}</p>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-4 border-t border-slate-200">
+            <a href="{% url 'dashboard' %}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-semibold">
+                <i class="ph ph-x"></i>
+                Cancel
+            </a>
+            <button type="submit" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                <i class="ph ph-plus-circle"></i>
+                Create Project
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const titleInput = document.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        const feedback = document.createElement('p');
+        feedback.className = 'text-xs mt-1';
+        titleInput.parentNode.appendChild(feedback);
+
+        let timeout = null;
+        titleInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const title = titleInput.value.trim();
+
+            if (title.length < 3) {
+                feedback.textContent = '';
+                return;
+            }
+
+            timeout = setTimeout(() => {
+                fetch(`{% url 'projects:api-check-title' %}?title=${encodeURIComponent(title)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        feedback.textContent = data.message;
+                        feedback.className = data.available ? 'text-xs mt-1 text-green-600' : 'text-xs mt-1 text-red-600';
+                    });
+            }, 500);
+        });
+    });
+</script>
+{% endblock %}

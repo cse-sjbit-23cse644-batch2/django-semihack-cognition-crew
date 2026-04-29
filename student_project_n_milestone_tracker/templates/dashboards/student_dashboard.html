@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard - MilestoneTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 2rem 0;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #3b82f6, #e5e7eb);
+    }
+    .timeline-item {
+        margin-bottom: 2rem;
+        padding-left: 5rem;
+        position: relative;
+    }
+    .timeline-dot {
+        position: absolute;
+        left: 0.65rem;
+        top: 0.25rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+    .timeline-dot.completed {
+        background: #10b981;
+        border-color: #059669;
+    }
+    .timeline-dot.active {
+        background: #3b82f6;
+        border-color: #1d4ed8;
+        animation: pulse 2s infinite;
+    }
+    .timeline-dot.locked {
+        background: #9ca3af;
+        border-color: #6b7280;
+    }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+    }
+    .timeline-content {
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid #e5e7eb;
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .timeline-content:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .timeline-content.completed {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+    .timeline-content.active {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    .timeline-content.locked {
+        border-color: #d1d5db;
+        background: #f3f4f6;
+    }
+    .timeline-content::before {
+        content: '';
+        position: absolute;
+        left: -0.75rem;
+        top: 1rem;
+        width: 0.75rem;
+        height: 0.75rem;
+        background: inherit;
+        border: 2px solid;
+        border-color: inherit;
+        border-radius: 50%;
+    }
+    .feedback-card {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .feedback-card.unresolved {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
+    .feedback-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    }
+    .version-item {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .version-item:hover {
+        background: #f9fafb;
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-slate-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Welcome Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-slate-900 font-heading">Your Project Dashboard</h1>
+            <p class="text-slate-600 mt-2">Track progress, submit milestones, and receive feedback</p>
+        </div>
+
+        <!-- Project Summary Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="md:col-span-2">
+                    <div class="mb-6">
+                        <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            Capstone {{ current_year }}
+                        </span>
+                    </div>
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">
+                        {{ project_title }}
+                    </h2>
+                    <p class="text-slate-600 leading-relaxed mb-6">
+                        {{ project_description }}
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition-colors hover:bg-slate-200">
+                            <i class="ph ph-tag mr-2"></i>
+                            Domain: {{ project_domain|default:"AI/ML" }}
+                        </span>
+                        <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition-colors hover:bg-slate-200">
+                            <i class="ph ph-chalkboard-teacher mr-2"></i>
+                            Guide: {{ guide_name|default:"Dr. Smith" }}
+                        </span>
+                        {% if pending_submissions %}
+                        <span class="inline-flex items-center px-3 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium animate-pulse">
+                            <i class="ph ph-warning-circle mr-2"></i>
+                            Status: Pending Review
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium transition-colors hover:bg-green-200">
+                            <i class="ph ph-check-circle mr-2"></i>
+                            Status: {{ project_status|default:"On Track" }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex flex-col justify-center">
+                    <div class="text-center">
+                        <div class="relative w-40 h-40 mx-auto mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#3b82f6" stroke-width="8" 
+                                    stroke-dasharray="283" stroke-dashoffset="{{ project_progress_offset }}" stroke-linecap="round" class="progress-ring-circle"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center">
+                                    <p class="text-4xl font-bold text-slate-900">{{ project_progress|default:0 }}%</p>
+                                    <p class="text-xs text-slate-600">Completion</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-2">You're {{ project_progress|default:0 }}% through your capstone journey!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Milestone Timeline -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <i class="ph ph-path text-blue-600 text-2xl"></i>
+                Milestone Timeline
+            </h2>
+
+            <div class="timeline">
+                    {% for phase in timeline_phases %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if phase.completed %}completed{% elif phase.is_current %}active{% else %}locked{% endif %}">
+                            <i class="ph {% if phase.completed %}ph-check{% elif phase.is_current %}ph-arrow-right{% else %}ph-lock-key-open{% endif %} text-white text-lg"></i>
+                        </div>
+                        <div class="timeline-content {% if phase.completed %}completed{% elif phase.is_current %}active{% else %}locked{% endif %}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-slate-900">{{ phase.name }}</h3>
+                                    <p class="text-sm text-slate-600 mt-1">{{ phase.description }}</p>
+                                    <p class="text-xs {% if phase.completed %}text-green-700{% elif phase.is_current %}text-blue-700{% else %}text-slate-500{% endif %} font-medium mt-2">
+                                        <i class="ph ph-clock mr-1"></i>
+                                        {% if phase.completed %}Completed{% elif phase.is_current %}In Progress{% else %}Locked{% endif %} • Due {{ phase.due_date|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                                <button class="px-3 py-1 {% if phase.completed %}bg-green-100 text-green-700{% elif phase.is_current %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-500{% endif %} rounded text-xs font-medium hover:opacity-90">
+                                    {{ phase.status }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            
+            <!-- Feedback Panel -->
+            <div class="lg:col-span-2">
+                <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    <i class="ph ph-chat-circle-dots text-purple-600 text-2xl"></i>
+                    Guide Feedback
+                </h2>
+
+                <div class="space-y-4">
+                    {% for feedback in feedbacks %}
+                    <div class="feedback-card {% if not feedback.resolved %}unresolved{% endif %}" data-feedback-id="{{ feedback.id }}">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 {% if not feedback.resolved %}bg-red-100{% else %}bg-green-100{% endif %} rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="ph {% if not feedback.resolved %}ph-warning text-red-600{% else %}ph-check text-green-600{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-slate-900">
+                                        Feedback on {{ feedback.submission.phase.get_name_display }}
+                                        {% if feedback.version %} (v{{ feedback.version.version_number }}){% endif %}
+                                    </p>
+                                    <p class="text-xs text-slate-600">From {{ feedback.given_by.get_full_name|default:feedback.given_by.username }} • {{ feedback.created_at|timesince }} ago</p>
+                                </div>
+                            </div>
+                            <span class="inline-block px-2 py-1 {% if not feedback.resolved %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded text-xs font-semibold uppercase">
+                                {% if not feedback.resolved %}UNRESOLVED{% else %}RESOLVED{% endif %}
+                            </span>
+                        </div>
+                        <p class="text-sm text-slate-700 mb-3">
+                            "{{ feedback.comment }}"
+                        </p>
+                        {% if not feedback.resolved %}
+                        <div class="flex gap-2">
+                            <button onclick="markFeedbackResolved({{ feedback.id }})" class="px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition">
+                                Mark Resolved
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="bg-white border border-slate-200 rounded-lg p-8 text-center">
+                        <i class="ph ph-chat-centered-dots text-slate-300 text-4xl mb-2"></i>
+                        <p class="text-slate-500">No feedback received yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Team Members -->
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 mb-6 flex items-center justify-between gap-2">
+                    <span class="flex items-center gap-2">
+                        <i class="ph ph-users text-blue-600"></i>
+                        Team Members
+                    </span>
+                    <a href="{% url 'my_team' %}" class="text-sm text-blue-600 hover:underline">View Details</a>
+                </h2>
+                <div class="space-y-3">
+                    {% for member in team.members_all %}
+                    <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 transition-all duration-300 hover:shadow-md hover:border-blue-300 hover:-translate-y-1 cursor-pointer">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="ph ph-user text-blue-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-slate-900 text-sm truncate">{{ member.get_full_name|default:member.username }}</p>
+                            <p class="text-xs text-slate-600">{{ member.role }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-slate-500">No team members found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Version History -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center justify-between gap-2">
+                <span class="flex items-center gap-2">
+                    <i class="ph ph-history text-slate-600"></i>
+                    Submission History
+                </span>
+                <div class="flex items-center gap-3">
+                    {% if team %}
+                    <a href="{% url 'projects:create-submission' team.id %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                        <i class="ph ph-upload-simple"></i>
+                        Upload Paper
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'submissions' %}" class="text-sm text-blue-600 hover:underline">View All</a>
+                </div>
+            </h2>
+
+            <div class="space-y-3">
+                {% for submission in team.submissions.all|slice:":3" %}
+                <div class="version-item bg-slate-50 border-slate-200 hover:border-blue-300 group">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start gap-4 flex-1">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                <i class="ph ph-file text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-slate-900">{{ submission.phase.name|default:"Phase Submission" }}</p>
+                                <p class="text-sm text-slate-600 mt-1">Status: {{ submission.status }}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0 ml-4">
+                            <a href="{% url 'submission_timeline' submission.id %}" class="px-3 py-1 bg-slate-200 text-slate-700 rounded text-xs font-medium hover:bg-slate-300 transition-colors">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-6 text-slate-500">
+                    <i class="ph ph-file-dashed text-3xl mb-2"></i>
+                    <p class="text-sm">No submissions found</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

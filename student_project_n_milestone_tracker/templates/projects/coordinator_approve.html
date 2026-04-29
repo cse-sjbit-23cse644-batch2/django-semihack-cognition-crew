@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Coordinator Approval | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Finalize Project</h1>
+            <p class="text-slate-600 mt-2">{{ project.title }}</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'projects:project-detail' project.pk %}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition font-semibold">
+                <i class="ph ph-arrow-left"></i>
+                Project Detail
+            </a>
+            <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-semibold">
+                <i class="ph ph-squares-four"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Guide Approval Checklist</h2>
+                        <p class="text-sm text-slate-500 mt-1">{{ approved_count }} of {{ total_phases }} phases approved.</p>
+                    </div>
+                    {% if ready_to_finalize %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Ready to finalize</span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-semibold">Waiting for guide approvals</span>
+                    {% endif %}
+                </div>
+
+                <div class="mt-5 h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div class="h-full bg-green-500" style="width: {{ project.get_completion_percentage }}%"></div>
+                </div>
+
+                <div class="mt-6 space-y-3">
+                    {% for row in phase_rows %}
+                    <div class="border border-slate-200 rounded-lg p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p class="font-semibold text-slate-900">{{ row.phase.get_name_display }}</p>
+                            <p class="text-sm text-slate-500">{{ row.phase.description|default:"No description" }}</p>
+                            {% if row.submission %}
+                                <p class="text-xs text-slate-500 mt-1">{{ row.submission.versions.count }} file(s) uploaded</p>
+                            {% else %}
+                                <p class="text-xs text-amber-700 mt-1">No submission created yet</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            {% if row.submission %}
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold {% if row.submission.status == 'APPROVED' %}bg-green-100 text-green-700{% elif row.submission.status == 'REJECTED' %}bg-red-100 text-red-700{% elif row.submission.status == 'SUBMITTED' or row.submission.status == 'UNDER_REVIEW' %}bg-amber-100 text-amber-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ row.submission.get_status_display }}
+                                </span>
+                                <a href="{% url 'projects:submission-detail' row.submission.pk %}" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold">
+                                    View Details
+                                </a>
+                            {% else %}
+                                <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Missing</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-semibold text-slate-900 mb-5">Final Approval</h2>
+                <form method="post" enctype="multipart/form-data" class="space-y-5">
+                    {% csrf_token %}
+                    <div>
+                        <label for="publication_status" class="block text-sm font-semibold text-slate-900 mb-2">Publication Status</label>
+                        <select name="publication_status" id="publication_status" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" {% if not ready_to_finalize %}disabled{% endif %} required>
+                            <option value="">Select status</option>
+                            {% for key, label in project.PUBLICATION_CHOICES %}
+                                <option value="{{ key }}" {% if project.publication_status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="certificate" class="block text-sm font-semibold text-slate-900 mb-2">Certificate Copy</label>
+                        <input type="file" name="certificate" id="certificate" accept="application/pdf" class="w-full border border-slate-300 rounded-lg px-3 py-2" {% if not ready_to_finalize %}disabled{% endif %}>
+                        {% if project.certificate %}
+                            <a href="{{ project.certificate.url }}" target="_blank" class="inline-flex mt-2 text-sm text-blue-600 hover:underline">View current certificate</a>
+                        {% else %}
+                            <p class="text-xs text-slate-500 mt-1">PDF only.</p>
+                        {% endif %}
+                    </div>
+
+                    {% if ready_to_finalize %}
+                        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                            <i class="ph ph-seal-check"></i>
+                            Finalize Project
+                        </button>
+                    {% else %}
+                        <button type="button" class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-200 text-slate-500 rounded-lg font-semibold cursor-not-allowed" disabled>
+                            <i class="ph ph-lock"></i>
+                            Finalize Locked
+                        </button>
+                        <p class="text-sm text-amber-700">Every phase must be approved by the guide before coordinator final approval.</p>
+                    {% endif %}
+                </form>
+            </div>
+        </section>
+
+        <aside class="space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <h2 class="text-lg font-semibold text-slate-900 mb-4">Project Summary</h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-slate-500">Status</dt>
+                        <dd class="font-semibold text-slate-900">{{ project.get_status_display }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-slate-500">Publication</dt>
+                        <dd class="font-semibold text-slate-900">{{ project.get_publication_status_display }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-slate-500">Domain</dt>
+                        <dd class="font-semibold text-slate-900">{{ project.domain.name|default:"N/A" }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-4">
+                        <dt class="text-slate-500">Guide</dt>
+                        <dd class="font-semibold text-slate-900">{{ project.guide.get_full_name|default:project.guide.username|default:"Unassigned" }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <h2 class="text-lg font-semibold text-slate-900 mb-4">Team Members</h2>
+                <div class="space-y-3">
+                    {% for member in team_members %}
+                    <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <p class="font-semibold text-slate-900 text-sm">{{ member.user.get_full_name|default:member.user.username }}</p>
+                        <p class="text-xs text-slate-500">{{ member.user.email }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-slate-500">No team members assigned.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

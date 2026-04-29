@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assigned Teams - MilestoneTrack{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-slate-50 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-slate-900 font-heading">Assigned Teams</h1>
+            <a href="{% url 'dashboard' %}" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition">
+                <i class="ph ph-arrow-left mr-2"></i>Dashboard
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for team in teams %}
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold text-slate-900 mb-1">{{ team.name }}</h3>
+                    <p class="text-sm font-medium text-blue-600 mb-3">{{ team.title }}</p>
+                    <p class="text-slate-600 text-sm mb-4 line-clamp-3">{{ team.description }}</p>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+                            <i class="ph ph-tag mr-1"></i>{{ team.domain.name|default:"Domain" }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+                            <i class="ph ph-users mr-1"></i>{{ team.members_count }} Members
+                        </span>
+                    </div>
+                    <a href="{% url 'projects:project-detail' team.pk %}" class="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold">
+                        <i class="ph ph-eye"></i>
+                        View Project
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-16 bg-white rounded-lg shadow-sm border border-slate-200">
+                <i class="ph ph-users-three text-6xl text-slate-300 mb-4"></i>
+                <p class="text-lg text-slate-600">No teams have been assigned to you yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

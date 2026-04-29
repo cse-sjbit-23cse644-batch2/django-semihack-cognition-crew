@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Project | MilestoneTracker{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Basic styling for form fields if django doesn't add classes */
+    input[type="text"], select, textarea {
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        outline: none;
+        transition: all 0.2s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Edit Project</h1>
+            <p class="text-slate-600 mt-2">Update project details and assignments.</p>
+        </div>
+        <a href="{% url 'projects:project-detail' project.pk %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <i class="ph ph-arrow-left"></i> Back to Detail
+        </a>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-red-700 text-sm font-semibold">Please correct the errors below:</p>
+            {% for error in form.non_field_errors %}
+                <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-900 mb-2">
+                {{ field.label }} {% if field.field.required %}*{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+            <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+            {% endif %}
+            {% if field.errors %}
+                <p class="text-red-600 text-sm mt-1">{{ field.errors|striptags }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="flex gap-4 pt-6">
+            <button 
+                type="submit" 
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+            >
+                <i class="ph-fill ph-floppy-disk"></i>
+                Save Changes
+            </button>
+            <a 
+                href="{% url 'projects:project-detail' project.pk %}" 
+                class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+            >
+                <i class="ph-fill ph-x"></i>
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const titleInput = document.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        // Create feedback element
+        const feedback = document.createElement('div');
+        feedback.className = 'text-xs mt-1';
+        titleInput.parentNode.appendChild(feedback);
+
+        let timeout = null;
+        const projectId = "{{ project.pk }}";
+
+        titleInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const title = titleInput.value.trim();
+            
+            if (title.length < 3) {
+                feedback.textContent = '';
+                return;
+            }
+
+            timeout = setTimeout(() => {
+                fetch(`{% url 'projects:api-check-title' %}?title=${encodeURIComponent(title)}&project_id=${projectId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        feedback.textContent = data.message;
+                        if (data.available) {
+                            feedback.className = 'text-xs mt-1 text-green-600';
+                            titleInput.classList.remove('border-red-500');
+                        } else {
+                            feedback.className = 'text-xs mt-1 text-red-600';
+                            titleInput.classList.add('border-red-500');
+                        }
+                    });
+            }, 500);
+        });
+    });
+</script>
+{% endblock %}

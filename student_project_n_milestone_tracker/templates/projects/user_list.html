@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user_type_plural }} | MilestoneTracker{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">{{ user_type_plural }}</h1>
+            <p class="text-muted">Manage {{ user_type_plural|lower }} in the academic workflow.</p>
+        </div>
+        {% if user_type == 'Student' %}
+            <a href="{% url 'student-create' %}" class="btn btn-primary">Add {{ user_type }}</a>
+        {% elif user_type == 'Guide' %}
+            <a href="{% url 'guide-create' %}" class="btn btn-primary">Add {{ user_type }}</a>
+        {% elif user_type == 'Coordinator' %}
+            <a href="{% url 'coordinator-create' %}" class="btn btn-primary">Add {{ user_type }}</a>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.get_full_name|default:user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at|date:'M d, Y' }}</td>
+                        <td class="text-end">
+                            {% if user_type == 'Student' %}
+                                <a href="{% url 'student-edit' user.pk %}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                <a href="{% url 'student-delete' user.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                            {% elif user_type == 'Guide' %}
+                                <a href="{% url 'guide-edit' user.pk %}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                <a href="{% url 'guide-delete' user.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                            {% elif user_type == 'Coordinator' %}
+                                <a href="{% url 'coordinator-edit' user.pk %}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                <a href="{% url 'coordinator-delete' user.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">No {{ user_type_plural|lower }} found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
